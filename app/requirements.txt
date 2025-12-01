@@ -1,0 +1,9 @@
+streamlit
+qdrant-client
+pandas
+sentence-transformers==2.6.1
+transformers==4.44.2
+huggingface-hub==0.23.2
+
+
+

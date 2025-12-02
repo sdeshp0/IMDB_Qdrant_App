@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from qdrant_client import QdrantClient
 import pandas as pd
@@ -7,7 +8,14 @@ import altair as alt
 st.title("🎬 IMDB Sentiment Explorer")
 
 # Connect to Qdrant
-client = QdrantClient(host="qdrant", port=6333)
+#client = QdrantClient(host="qdrant", port=6333)
+client = QdrantClient(
+    host=os.environ.get("QDRANT_HOST", "localhost"),
+    port=int(os.environ.get("QDRANT_PORT", 6333)),
+    api_key=os.environ.get("QDRANT_API_KEY"),
+    https=False
+)
+
 
 # Fetch a batch of reviews to populate analytics + dropdown
 results, _ = client.scroll(collection_name="imdb_reviews", limit=500)

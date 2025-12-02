@@ -1,20 +1,28 @@
 import warnings
-warnings.filterwarnings(
-    "ignore",
-    message=".*clean_up_tokenization_spaces.*",
-    category=FutureWarning
-)
-
+import os
 from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 import random
 
+warnings.filterwarnings(
+    "ignore",
+    message=".*clean_up_tokenization_spaces.*",
+    category=FutureWarning
+)
+
 collection_name = "imdb_reviews"
 model_name = "sentence-transformers/all-MiniLM-L6-v2"
 
-client = QdrantClient(host="qdrant", port=6333)
+#client = QdrantClient(host="qdrant", port=6333)
+client = QdrantClient(
+    host=os.environ.get("QDRANT_HOST", "localhost"),
+    port=int(os.environ.get("QDRANT_PORT", 6333)),
+    api_key=os.environ.get("QDRANT_API_KEY"),
+    https=False
+)
+
 
 # Delete and recreate collection
 try:

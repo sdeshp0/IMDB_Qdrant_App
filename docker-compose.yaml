@@ -9,6 +9,7 @@ services:
     environment:
       QDRANT__SERVICE__HOST: "0.0.0.0"
       QDRANT__SERVICE__HTTP_PORT: "6333"
+      QDRANT__SERVICE__API_KEY: supersecretkey
     restart: unless-stopped
 
   loader:
@@ -19,6 +20,7 @@ services:
     environment:
       QDRANT_HOST: qdrant
       QDRANT_PORT: "6333"
+      QDRANT_API_KEY: supersecretkey
     depends_on:
       - qdrant
     command: ["python", "load_data.py"]
@@ -34,6 +36,7 @@ services:
     environment:
       QDRANT_HOST: qdrant
       QDRANT_PORT: "6333"
+      QDRANT_API_KEY: supersecretkey
     depends_on:
       - qdrant
     restart: unless-stopped

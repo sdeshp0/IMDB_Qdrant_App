@@ -28,8 +28,6 @@ This app is designed as a **learning portfolio project** to showcase:
 
 ---
 
-
-
 ## 📂 Project Structure
 
 - IMDB_Qdrant_App
@@ -49,7 +47,7 @@ This app is designed as a **learning portfolio project** to showcase:
 
 ---
 
-## 🚀 How to Run Locally
+## 🚀 How to Run Locally using Docker Compose
 
 ### 1. Clone the repo
 ```bash
@@ -57,17 +55,23 @@ git clone https://github.com/sdesh0/IMDB_Qdrant_App.git
 cd IMDB_Qdrant_App
 ```
 
-### 2. Start core services (Qdrant + Streamlit app)
+### 2. Build Images
 
 ```bash
-docker-compose up app qdrant --build
+docker-compose up --build
+```
+
+### 3. Start core services (Qdrant + Streamlit app)
+
+```bash
+docker-compose up qdrant app
 ```
 
 This will:
 - Start **Qdrant** on port 6333 with persistent storage
 - Launch the **Streamlit app** on port 8501
 
-### 3. Load data manually (on-off job)
+### 4. Load data manually (one-off job)
 
 ```bash
 docker-compose run --rm loader
@@ -79,13 +83,52 @@ This will:
 - Embed reviews and insert them into Qdrant
 - Print the positive/negative distribution for verification
 
-### 3. Open the app
+### 5. Open the app
 
 - Streamlit dashboard -> http://localhost:8501
 - Qdrant dashboard -> http://localhost:6333/dashboard
 
-## 🛠 Notes on Persistence
+### 6. Stop the app
+
+```bash
+docker-compose down
+```
+This will stop and remove containers but will keep volumes so that data persists.
+
+If you also want to remove the volumes, use:
+
+```bash
+docker-compose down -v
+```
+
+### 🛠 Notes on Persistence
 
 - Qdrant data is stored in a Docker volume (qdrant_storage) so it survives container restarts.
 - The loader always resets the collection when run, ensuring reproducibility.
 - Each loader run shuffles the dataset, so the sentiment distribution varies (balanced mix of positives/negatives).
+
+### 🔑 Note on Secrets Management
+
+While this demo app does not strictly require secrets, an API key has been created to access the Qdrant client.
+
+The API key has been passed directly in docker-compose.yaml:
+
+```yaml
+environment:
+  QDRANT__SERVICE__API_KEY: supersecretkey
+  QDRANT_API_KEY: supersecretkey
+```
+
+A better practice for local development is to store the API key in a .env file and then reference it in Compose
+```env
+QDRANT_API_KEY=supersecretkey
+```
+
+```yaml
+env_file:
+  - .env
+```
+
+---
+
+

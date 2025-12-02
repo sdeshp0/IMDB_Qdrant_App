@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: imdb-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: imdb-app
+  template:
+    metadata:
+      labels:
+        app: imdb-app
+    spec:
+      containers:
+        - name: app
+          image: sidprojects01/imdb_app:latest
+          ports:
+            - containerPort: 8501
+          env:
+            - name: QDRANT_HOST
+              value: qdrant
+            - name: QDRANT_PORT
+              value: "6333"
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: qdrant-secret
+                  key: api-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imdb-app
+spec:
+  selector:
+    app: imdb-app
+  ports:
+    - port: 8501
+      targetPort: 8501
+      nodePort: 30747 # optional or let Kubernetes assign
+  type: NodePort   # or LoadBalancer if on cloud

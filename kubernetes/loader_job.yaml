@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: imdb-loader
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: loader
+          image: sidprojects01/imdb_loader:latest
+          env:
+            - name: QDRANT_HOST
+              value: qdrant
+            - name: QDRANT_PORT
+              value: "6333"
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: qdrant-secret
+                  key: api-key

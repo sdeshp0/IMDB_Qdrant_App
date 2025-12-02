@@ -131,4 +131,177 @@ env_file:
 
 ---
 
+## ☸️ Kubernetes Quickstart
+
+This project also includes Kubernetes manifests for deployment.
+
+- **Qdrant** → Vector database with persistent storage.
+- **Streamlit App** → Interactive dashboard.
+- **Loader Job** → One-off job to populate Qdrant with IMDB embeddings.
+
+Deployment Order:
+```bash
+kubectl apply -f kubernetes/qdrant_secret.yaml
+kubectl apply -f kubernetes/qdrant.yaml
+kubectl apply -f kubernetes/app.yaml
+kubectl apply -f kubernetes/loader_job.yaml
+```
+
+## ☸️ Kubernetes Detailed
+
+### 1. Build & Push Images
+Make sure your app and loader images are available in a registry (e.g., DockerHub):
+```bash
+docker build -t your-dockerhub-username/imdb_app:latest ./app
+docker build -t your-dockerhub-username/imdb_loader:latest ./loader
+docker push your-dockerhub-username/imdb_app:latest
+docker push your-dockerhub-username/imdb_loader:latest
+```
+
+⚠️ Caveat: If the image name in your manifests does not match exactly what you pushed, pods will fail with ImagePullBackOff.
+
+### 2. Deploy Secrets
+```bash
+kubectl apply -f kubernetes/qdrant_secret.yaml
+```
+
+### 3. Deploy Qdrant
+```bash
+kubectl apply -f kubernetes/qdrant.yaml
+```
+- Creates a PersistentVolumeClaim for storage.
+- Deploys Qdrant with one replica.
+- Injects the secret into Qdrant's environment.
+- Exposes it as a Service on port 6333.
+
+check pod status:
+```bash
+kubectl get pods
+```
+
+### 4. Deploy the Streamlit App
+```bash
+kubectl apply -f kubernetes/app.yaml
+```
+
+- Deploys the Streamlit dashboard.
+- Exposes it via a Service on port 8501 (NodePort or LoadBalancer).
+- References the secret in the app
+
+Check service details:
+```bash
+kubectl get svc imdb-app
+```
+
+Example Output:
+```bash
+NAME       TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+imdb-app   NodePort   10.96.12.34    <none>        8501:30747/TCP   5m
+```
+Here, 30747 is the NodePort. You can access the app at http://localhost:30747
+
+On cloud providers, set Service type to LoadBalancer and use the external IP to access the app.
+
+### 5. Run the Loader Job
+```bash
+kubectl apply -f kubernetes/loader_job.yaml
+```
+
+- Runs the loader once to populate Qdrant with IMDB embeddings.
+- Injects the secret into the loader job
+- Job exits after completion.
+
+⚠️ Caveat: Jobs are immutable. If you re‑apply with changes, you’ll see something like:
+
+```bash
+The Job "imdb-loader" is invalid: spec.template: field is immutable
+```
+
+Fix this by deleting and re-applying:
+
+```bash
+kubectl delete job imdb-loader
+kubectl apply -f kubernetes/loader_job.yaml
+```
+
+### 6. Watch Logs
+
+Monitor the loader job:
+```bash
+kubectl logs -f job/imdb-loader
+```
+
+Expected Output should have something like:
+```bash
+✅ Loaded 2000 IMDB reviews into Qdrant (1000 positives, 1000 negatives)
+```
+This indicates that the imdb-loader job has executed and loaded data into Qdrant
+
+### 7. Verify Data in Qdrant
+
+Open the Qdrant dashboard:
+```bash
+http://localhost:<qdrant-nodeport>/dashboard
+```
+
+Or check collections using CLI:
+```bash
+kubectl exec -it <qdrant-pod-name> -- curl http://localhost:6333/collections
+```
+
+### 8. Common Issues and Fixes
+
+- **ImagePullBackOff** -> Your image name/tag doesn’t match what’s in DockerHub.
+  - Run docker push <username>/imdb-app:latest and update manifests.
+- **Job immutability error** -> Delete the old job before re‑applying.
+  ```bash
+  kubectl delete job imdb-loader
+  ```
+- **Version mismatch warning** ->
+  ```bash
+  UserWarning: Qdrant client version 1.16.1 is incompatible with server version 1.10.0
+  ```
+  - Fix by upgrading Qdrant server image in qdrant.yaml:
+  image: qdrant/qdrant:v1.16.1
+
+### 9. Access Services (Recap)
+- Streamlit app → via NodePort/LoadBalancer on port 8501.
+- Qdrant dashboard → via port 6333.
+
+### 10. Stop App and Services (Docker Desktop)
+
+Assuming you are running Kubernetes via Docker Desktop you can stop the app and its services in two ways:
+- Stop workloads but keep cluster running:
+  ```bash
+  kubectl delete -f kubernetes/app.yaml
+  kubectl delete -f kubernetes/qdrant.yaml
+  kubectl delete -f kubernetes/loader_job.yaml
+  ```
+- Wipe everything in the namespace:
+  ```bash
+  kubectl delete all --all 
+  ```
+- Check the cleanup:
+  ```bash
+  kubectl get pods
+  ```
+  This should return something like: No resources found
+
+Docker Desktop keeps Kubernetes running in the background. To fully stop the cluster, you can disable Kubernetes in
+Docker Desktop settings: *Preferences -> Kubernetes -> uncheck “Enable Kubernetes”*
+
+⚠️ Note: kubectl only manages workloads. To stop the cluster itself, you must toggle Kubernetes in Docker Desktop.
+
+### 🛠 Notes on Persistence
+- Qdrant data is stored in a PVC (qdrant-pvc) so it survives pod restarts.
+- The loader job always resets the collection when run, ensuring reproducibility.
+- Each loader run shuffles the dataset, so the sentiment distribution varies.
+
+### 🔑 Secrets Management Notes
+- Base64 encoding ≠ encryption. Enable encryption at rest for stronger security.
+- Use RBAC to restrict access to secrets.
+- Don’t commit secrets to Git — use .env for Compose and Secrets for Kubernetes.
+- Rotate secrets regularly.
+- In production, consider external secret managers (Vault, AWS Secrets Manager, Azure Key Vault).
+
 

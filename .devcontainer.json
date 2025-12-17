@@ -1,0 +1,29 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "remoteUser": "root",
+  "overrideCommand": true,
+  "updateRemoteUserUID": true,
+  "forwardPorts": [
+        8000
+    ],
+  "features": {
+    "ghcr.io/devcontainers/features/python:1.3": {
+      "version": "3.11.3"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter"
+      ]
+    }
+  },
+  "postCreateCommand": "set -eux; apt-get update; curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/;  KIND_VERSION=v0.20.0; curl -Lo ./kind https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64; chmod +x ./kind; sudo mv ./kind /usr/local/bin/kind; curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash"
+}

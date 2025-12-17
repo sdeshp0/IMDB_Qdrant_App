@@ -202,6 +202,10 @@ Here, 30747 is the NodePort. You can access the app at http://localhost:30747
 
 On cloud providers, set Service type to LoadBalancer and use the external IP to access the app.
 
+Port forwarding:
+```bash
+kubectl port-forward svc/imdb-app 8501:8501
+
 ### 5. Run the Loader Job
 ```bash
 kubectl apply -f kubernetes/loader_job.yaml

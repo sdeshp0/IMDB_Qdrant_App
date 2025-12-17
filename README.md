@@ -198,7 +198,11 @@ Example Output:
 NAME       TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
 imdb-app   NodePort   10.96.12.34    <none>        8501:30747/TCP   5m
 ```
-Here, 30747 is the NodePort. You can access the app at http://localhost:30747
+Here, 30747 is the NodePort. In this example the app can be accessed at http://localhost:30747.
+
+As the NodePort has been removed, use the port-forwarding command below so that the app can be accessed at 
+http://localhost:8501
+
 
 On cloud providers, set Service type to LoadBalancer and use the external IP to access the app.
 
@@ -308,4 +312,37 @@ Docker Desktop settings: *Preferences -> Kubernetes -> uncheck “Enable Kuberne
 - Rotate secrets regularly.
 - In production, consider external secret managers (Vault, AWS Secrets Manager, Azure Key Vault).
 
+
+## ☸️ Using Tilt
+
+With Tilt installed, the kubernetes deployment can be run based on the commands set up in the Tiltfile.
+
+### Tiltfile Contents
+
+```commandline
+k8s_yaml(['kubernetes/qdrant_secret.yaml',
+          'kubernetes/qdrant.yaml',
+          'kubernetes/loader_job.yaml',
+          'kubernetes/app.yaml'
+          ])
+
+k8s_resource(
+    workload='imdb-app',
+    port_forwards='8501:8501'
+    )
+```
+
+The Tiltfile currently contains two commands.
+1. The first command ```k8s_yaml()``` is equivalent to running kubectl apply on each of the yaml manifests.
+2. The second command ```k8s_resource()``` is used to set up port-forwarding for the imdb-app
+
+### Running Tilt
+
+Run tilt using the command
+```bash
+tilt up
+```
+
+After running this command, note the response shown in the CLI. Hit ```spacebar``` to open the Tilt browser to view the
+kubernetes objects in the browser-based Tilt environment.
 

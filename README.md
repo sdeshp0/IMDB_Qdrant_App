@@ -209,6 +209,7 @@ On cloud providers, set Service type to LoadBalancer and use the external IP to 
 Port forwarding:
 ```bash
 kubectl port-forward svc/imdb-app 8501:8501
+```
 
 ### 5. Run the Loader Job
 ```bash
